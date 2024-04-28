@@ -45,7 +45,7 @@ pub enum TdVmcallError {
     /// TDCALL[TDG.VP.VMCALL] sub-function invocation must be retried.
     TdxRetry,
     /// Invalid operand to TDG.VP.VMCALL sub-function.
-    TdxInvalidOperand,
+    TdxOperandInvalid,
     /// GPA already mapped.
     TdxGpaInuse,
     /// Operand (address) aligned error.
@@ -57,7 +57,7 @@ impl From<u64> for TdVmcallError {
     fn from(val: u64) -> Self {
         match val {
             0x1 => Self::TdxRetry,
-            0x8000_0000_0000_0000 => Self::TdxInvalidOperand,
+            0x8000_0000_0000_0000 => Self::TdxOperandInvalid,
             0x8000_0000_0000_0001 => Self::TdxGpaInuse,
             0x8000_0000_0000_0002 => Self::TdxAlignError,
             _ => Self::Other,
@@ -211,7 +211,7 @@ pub fn map_gpa(gpa: u64, size: u64) -> Result<(), (u64, TdVmcallError)> {
 /// Enclave operating in the host environment for a TD Report passed as a parameter by the TD.
 /// TDREPORT_STRUCT is a memory operand intended to be sent via the GetQuote
 /// TDG.VP.VMCALL to indicate the asynchronous service requested.
-pub unsafe fn get_quote(shared_gpa: u64, size: u64) -> Result<(), TdVmcallError> {
+pub fn get_quote(shared_gpa: u64, size: u64) -> Result<(), TdVmcallError> {
     let mut args = TdVmcallArgs {
         r11: TdVmcallNum::GetQuote as u64,
         r12: shared_gpa,
@@ -288,8 +288,8 @@ macro_rules! io_write {
 
 pub fn io_write(size: IoSize, port: u16, byte: u32) -> Result<(), TdVmcallError> {
     match size {
-        IoSize::Size1 => io_write!(port, byte, u8),
-        IoSize::Size2 => io_write!(port, byte, u16),
+        IoSize::Size1 => io_write!(port, byte as u8, u8),
+        IoSize::Size2 => io_write!(port, byte as u16, u16),
         IoSize::Size4 => io_write!(port, byte, u32),
         _ => unreachable!(),
     }

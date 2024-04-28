@@ -402,9 +402,11 @@ pub fn get_veinfo() -> Result<TdgVeInfo, TdCallError> {
 }
 
 /// Extend a TDCS.RTMR measurement register.
-pub fn extend_rtmr() -> Result<(), TdCallError> {
+pub fn extend_rtmr(extend_data_gpa: u64, reg_idx: u64) -> Result<(), TdCallError> {
     let mut args = TdcallArgs {
         rax: TdcallNum::MrRtmrExtend as u64,
+        rcx: extend_data_gpa,
+        rdx: reg_idx,
         ..Default::default()
     };
     td_call(&mut args)
@@ -413,11 +415,11 @@ pub fn extend_rtmr() -> Result<(), TdCallError> {
 /// TDG.MR.REPORT creates a TDREPORT_STRUCT structure that contains the measurements/configuration
 /// information of the guest TD that called the function, measurements/configuration information
 /// of the Intel TDX module and a REPORTMACSTRUCT.
-pub fn get_report(report_gpa: &[u8], data_gpa: &[u8]) -> Result<(), TdCallError> {
+pub fn get_report(report_gpa: u64, data_gpa: u64) -> Result<(), TdCallError> {
     let mut args = TdcallArgs {
         rax: TdcallNum::MrReport as u64,
-        rcx: report_gpa.as_ptr() as u64,
-        rdx: data_gpa.as_ptr() as u64,
+        rcx: report_gpa,
+        rdx: data_gpa,
         ..Default::default()
     };
     td_call(&mut args)

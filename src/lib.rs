@@ -21,6 +21,9 @@ pub use self::{
     tdvmcall::print,
 };
 
+pub const SHARED_BIT: u8 = 51;
+pub const SHARED_MASK: u64 = 1u64 << SHARED_BIT;
+
 static TDX_ENABLED: AtomicBool = AtomicBool::new(false);
 
 #[inline(always)]
