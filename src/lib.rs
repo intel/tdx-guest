@@ -16,7 +16,7 @@ use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
 use raw_cpuid::{native_cpuid::cpuid_count, CpuIdResult};
 use tdcall::{InitError, TdgVpInfo};
-use ve::{handle_io, handle_mmio, is_protected_gpa};
+use ve::{handle_io, handle_mmio};
 
 pub use self::{
     tdcall::{get_veinfo, TdgVeInfo, TdxVirtualExceptionType},
@@ -141,4 +141,3 @@ pub fn handle_virtual_exception(trapframe: &mut dyn TdxTrapFrame, ve_info: &TdgV
 pub fn is_protected_gpa(gpa: TdxGpa) -> bool {
     (gpa as u64 & SHARED_MASK) == 0
 }
-

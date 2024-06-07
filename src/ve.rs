@@ -9,7 +9,7 @@ use crate::{
     tdvmcall::{
         io_read, io_write, read_mmio, write_mmio, Direction, IoSize, Operand, TdVmcallError,
     },
-    TdxGpa, TdxTrapFrame, SHARED_MASK,
+    TdxTrapFrame,
 };
 
 enum InstrMmioType {
@@ -58,10 +58,6 @@ pub(crate) fn handle_io(trapframe: &mut dyn TdxTrapFrame, ve_info: &TdgVeInfo) -
         }
     };
     true
-}
-
-pub(crate) fn is_protected_gpa(gpa: TdxGpa) -> bool {
-    (gpa as u64 & SHARED_MASK) == 0
 }
 
 pub(crate) fn handle_mmio(
