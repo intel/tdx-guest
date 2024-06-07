@@ -126,7 +126,7 @@ pub(crate) fn handle_mmio(
                 InstrMmioType::WriteImm => {
                     // Retrieve the second operand of the instruction, which is the immediate value to be written.
                     // In x86 MOV instructions, when the destination is a memory location or a register, the immediate value is always the second operand.
-                    let mut value = instr.immediate(1);
+                    let value = instr.immediate(1);
                     // Safety: The mmio_gpa obtained from `ve_info` is valid, and the value and size parsed from the instruction are valid.
                     unsafe {
                         write_mmio(size, ve_info.guest_physical_address, value)
