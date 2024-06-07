@@ -137,3 +137,8 @@ pub fn handle_virtual_exception(trapframe: &mut dyn TdxTrapFrame, ve_info: &TdgV
     }
     trapframe.set_rip(trapframe.rip() + instr_len as usize);
 }
+
+pub fn is_protected_gpa(gpa: TdxGpa) -> bool {
+    (gpa as u64 & SHARED_MASK) == 0
+}
+
