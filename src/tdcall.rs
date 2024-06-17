@@ -22,6 +22,8 @@ pub enum TdcallNum {
     MemPageAccept = 6,
     VmRd = 7,
     VmWr = 8,
+    ServetdRd = 18,
+    ServetdWr = 20,
     MrVerifyreport = 22,
     MemPageAttrRd = 23,
     MemPageAttrWr = 24,
@@ -288,17 +290,62 @@ pub enum TdCallError {
     TdxPageAlreadyAccepted,
     /// Requested page size does not match the current GPA mapping size.
     TdxPageSizeMismatch,
+    /// The provided FIELD_ID is incorrect.
+    TdxMetadataFieldIdIncorrect,
+    /// Field code and write mask are for a read-only field.
+    TdxMetadataFieldNotWritable,
+    /// Field code is for an unreadable field.
+    TdxMetadataFieldNotReadable,
+    /// The provided field value is not valid.
+    TdxMetadataFieldValueNotValid,
+    /// The TD's OP_STATE is incorrect for the required operation.
+    TdxOpStateIncorrect,
+    /// Operand address is out of range (e.g., not in a TDMR).
+    TdxOperandAddrRangeError,
+    /// Physical page metadata (in PAMT) are incorrect for the requested operation.
+    TdxPageMetadataIncorrect,
+    /// Service TD hash of TDINFO_STRUCT does not match the currently bound hash.
+    TdxServtdInfoHashMismatch,
+    /// Service TD is not bound.
+    TdxServtdNotBound,
+    /// Service TD UUID does not match the currently bound UUID.
+    TdxServtdUuidMismatch,
+    /// Target TD UUID does not match the requested TD_UUID.
+    TdxTargetUuidMismatch,
+    /// Target TD UUID does not match the requested TD_UUID, but pre-migration target TD UUID does match it.
+    TdxTargetUuidUpdated,
+    /// TD is in a FATAL error state.
+    TdxTdFatal,
+    /// TD keys have not been configured on the hardware.
+    TdxTdKeysNotConfigured,
+    /// TDCS pages have not been allocated.
+    TdxTdcsNotAllocated,
     Other,
 }
 
 impl From<u64> for TdCallError {
     fn from(val: u64) -> Self {
         match val {
-            0xC000_0704 => Self::TdxNoValidVeInfo,
-            0xC000_0100 => Self::TdxOperandInvalid,
-            0x8000_0200 => Self::TdxOperandBusy,
             0x0000_0B0A => Self::TdxPageAlreadyAccepted,
+            0x8000_0200 => Self::TdxOperandBusy,
+            0x8000_0810 => Self::TdxTdKeysNotConfigured,
+            0xC000_0100 => Self::TdxOperandInvalid,
+            0xC000_0101 => Self::TdxOperandAddrRangeError,
+            0xC000_0300 => Self::TdxPageMetadataIncorrect,
+            0xC000_0606 => Self::TdxTdcsNotAllocated,
+            0xC000_0608 => Self::TdxOpStateIncorrect,
+            0xC000_0704 => Self::TdxNoValidVeInfo,
             0xC000_0B0B => Self::TdxPageSizeMismatch,
+            0xC000_0C00 => Self::TdxMetadataFieldIdIncorrect,
+            0xC000_0C01 => Self::TdxMetadataFieldNotWritable,
+            0xC000_0C02 => Self::TdxMetadataFieldNotReadable,
+            0xC000_0C03 => Self::TdxMetadataFieldValueNotValid,
+            0xC000_0D03 => Self::TdxServtdInfoHashMismatch,
+            0xC000_0D04 => Self::TdxServtdUuidMismatch,
+            0xC000_0D05 => Self::TdxServtdNotBound,
+            0xC000_0D07 => Self::TdxTargetUuidMismatch,
+            0xC000_0D08 => Self::TdxTargetUuidUpdated,
+            0xE000_0604 => Self::TdxTdFatal,
             _ => Self::Other,
         }
     }
@@ -527,6 +574,81 @@ pub fn set_cpuidve(cpuidve_flag: u64) -> Result<(), TdCallError> {
         ..Default::default()
     };
     td_call(&mut args)
+}
+
+/// As a service TD, read a metadata field (control structure field) of a target TD.
+///
+/// Inputs:
+/// - binding_handle: the binding handle of the target TD.
+/// - field_identifier: the identifier of the field to read.
+/// The `LAST_ELEMENT_IN_FIELD` and `LAST_FIELD_IN_SEQUENCE` components of the field identifier must be 0.
+/// `WRITE_MASK_VALID`, `INC_SIZE`, `CONTEXT_CODE` and `ELEMENT_SIZE_CODE` components of the field identifier are ignored.
+/// A value of -1 is a special case: it is not a valid field identifier;
+/// in this case the first readable field identifier is returned in `RDX`.
+/// - uuid: the TD_UUID of the target TD, using little-Endian.
+///
+/// Outputs:
+/// - Next readable field identifier. A value of -1 indicates no next field identifier is available.
+/// If the input field identifier was -1, `RDX` returns the first readable field identifier.
+/// In case of another error, `RDX` returns -1.
+/// - Contents of the field. In case of an error, as indicated by `RAX`, `R8` returns 0.
+/// - Updated target TD’s TD_UUID, using little-Endian.
+pub fn read_servetd(
+    binding_handle: u64,
+    field_identifier: u64,
+    uuid: [u64; 4],
+) -> Result<(u64, u64, [u64; 4]), TdCallError> {
+    let mut args = TdcallArgs {
+        rax: TdcallNum::ServetdRd as u64,
+        rcx: binding_handle,
+        rdx: field_identifier,
+        r10: uuid[0],
+        r11: uuid[1],
+        r12: uuid[2],
+        r13: uuid[3],
+        ..Default::default()
+    };
+    td_call(&mut args)?;
+    Ok((args.rdx, args.r8, [args.r10, args.r11, args.r12, args.r13]))
+}
+
+/// As a service TD, write a metadata field (control structure field) of a target TD.
+///
+/// Inputs:
+/// - binding_handle: the binding handle of the target TD.
+/// - field_identifier: the identifier of the field to read.
+/// The `LAST_ELEMENT_IN_FIELD` and `LAST_FIELD_IN_SEQUENCE` components of the field identifier must be 0.
+/// `WRITE_MASK_VALID`, `INC_SIZE`, `CONTEXT_CODE` and `ELEMENT_SIZE_CODE` components of the field identifier are ignored.
+/// A value of -1 is a special case: it is not a valid field identifier;
+/// in this case the first readable field identifier is returned in `RDX`.
+/// - data: Data to write to the field.
+/// - write_mask: A 64b write mask to indicate which bits of the value in `R8` are to be written to the field.
+/// - uuid: the TD_UUID of the target TD, using little-Endian.
+///
+/// Outputs:
+/// - Previous contents of the field. In case of an error, `R8` returns 0.
+/// - Updated target TD’s TD_UUID, using little-Endian.
+pub fn write_servetd(
+    binding_handle: u64,
+    field_identifier: u64,
+    data: u64,
+    mask: u64,
+    uuid: [u64; 4],
+) -> Result<(u64, u64, [u64; 4]), TdCallError> {
+    let mut args = TdcallArgs {
+        rax: TdcallNum::ServetdWr as u64,
+        rcx: binding_handle,
+        rdx: field_identifier,
+        r8: data,
+        r9: mask,
+        r10: uuid[0],
+        r11: uuid[1],
+        r12: uuid[2],
+        r13: uuid[3],
+        ..Default::default()
+    };
+    td_call(&mut args)?;
+    Ok((args.rdx, args.r8, [args.r10, args.r11, args.r12, args.r13]))
 }
 
 fn td_call(args: &mut TdcallArgs) -> Result<(), TdCallError> {

@@ -19,8 +19,8 @@ The tdx-guest provides a Rust implementation of Intel® Trust Domain Extension
 | 10   | TDG.VP.WR | Write a VCPU-scope metadata field | ❌ | - |
 | 11   | TDG.SYS.RD | Read a TDX Module global-scope metadata field | ❌ | - |
 | 12   | TDG.SYS.RDALL | Read all gust-readable TDX Module global-scope metadata fields | ❌ | - |
-| 18   | TDG.SERVTD.RD | Read a target TD metadata field | ❌ | - |
-| 20   | TDG.SERVTD.WR | Write a target TD metadata field | ❌ | - |
+| 18   | TDG.SERVTD.RD | Read a target TD metadata field | ✅ | `read_servetd` |
+| 20   | TDG.SERVTD.WR | Write a target TD metadata field | ✅ | `write_servetd` |
 | 22   | TDG.MR.VERIFYREPORT | Verify a cryptographic report of a TD, generated on the current platform | ✅ | `verify_report` |
 | 23   | TDG.MEM.PAGE.ATTR.RD | Read the GPA mapping and attributes of a TD private page | ✅ | `read_page_attr` |
 | 24   | TDG.MEM.PAGE.ATTR.WR | Write the attributes of a private page | ✅ | `write_page_attr` |

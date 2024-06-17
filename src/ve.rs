@@ -357,5 +357,3 @@ fn decode_mmio(instr: &Instruction) -> Option<(InstrMmioType, IoSize)> {
         _ => None,
     }
 }
-
-
