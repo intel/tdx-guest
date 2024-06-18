@@ -37,7 +37,7 @@ The tdx-guest provides a Rust implementation of Intel® Trust Domain Extension
 | 0x10002             | GetQuote                           | ✅             | `get_quote`                       |
 | 0x10003             | ReportFatalError                   | ❌             | -                                 |
 | 0x10004             | SetupEventNotifyInterrupt          | ✅             | `setup_event_notify_interrupt`    |
-| 0x10005             | Service                            | ❌             | -                                 |
+| 0x10005             | Service                            | ✅             | `get_td_service`                  |
 
 
 | Sub-Function Number Bits 15:0 | Sub-Function Name in Specification | Is Implemented | Interface Function Name            |

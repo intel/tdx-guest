@@ -33,6 +33,7 @@ pub enum TdVmcallNum {
     Mapgpa = 0x10001,
     GetQuote = 0x10002,
     SetupEventNotifyInterrupt = 0x10004,
+    Service = 0x10005,
 }
 
 const SERIAL_IO_PORT: u16 = 0x3F8;
@@ -244,6 +245,45 @@ pub fn get_tdvmcall_info(interrupt_vector: u64) -> Result<(), TdVmcallError> {
         r11: TdVmcallNum::GetTdVmcallInfo as u64,
         // This register is reserved to extend TDG.VP.VMCALL enumeration in future versions.
         r12: 0,
+        ..Default::default()
+    };
+    td_vmcall(&mut args)
+}
+
+/// In Service TD scenario, there is a need to define interfaces for the command/response that
+/// may have long latency, such as communicating with local device via Secure Protocol and Data
+/// Model (SPDM), communicating with remote platform via Transport Layer Security (TLS)
+/// Protocol, or communicating with a Quoting Enclave (QE) on attestation or mutual
+/// authentication.
+///
+/// There is also needed that the VMM may notify a service TD to do some actions, such as
+/// Migration TD (MigTD).
+///
+/// We define Command/Response Buffer (CRB) DMA interface.
+///
+/// Inputs:
+/// - shared_gpa_input: Shared 4KB aligned GPA as input – the memory contains a Command.
+/// It could be more than one 4K pages.
+/// - shared_gpa_output: Shared 4KB aligned GPA as output – the memory contains a Response.
+/// It could be more than one 4K pages.
+/// - interrupt_vector: Event notification interrupt vector - (valid values 32~255) selected by TD.
+/// 0: blocking action. VMM need get response then return.
+/// 1~31: Reserved. Should not be used.
+/// 32~255: Non-block action. VMM can return immediately and signal the interrupt vector when the response is ready.
+/// VMM should inject interrupt vector into the TD VCPU that executed TDG.VP.VMCALL<Service>.
+/// - time_out: Timeout– Maximum wait time for the command and response. 0 means infinite wait.
+pub fn get_td_service(
+    shared_gpa_input: u64,
+    shared_gpa_output: u64,
+    interrupt_vector: u64,
+    time_out: u64,
+) -> Result<(), TdVmcallError> {
+    let mut args = TdVmcallArgs {
+        r11: TdVmcallNum::Service as u64,
+        r12: shared_gpa_input,
+        r13: shared_gpa_output,
+        r14: interrupt_vector,
+        r15: time_out,
         ..Default::default()
     };
     td_vmcall(&mut args)
