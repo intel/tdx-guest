@@ -634,7 +634,7 @@ pub fn write_servetd(
     data: u64,
     mask: u64,
     uuid: [u64; 4],
-) -> Result<(u64, u64, [u64; 4]), TdCallError> {
+) -> Result<(u64, [u64; 4]), TdCallError> {
     let mut args = TdcallArgs {
         rax: TdcallNum::ServetdWr as u64,
         rcx: binding_handle,
@@ -648,7 +648,7 @@ pub fn write_servetd(
         ..Default::default()
     };
     td_call(&mut args)?;
-    Ok((args.rdx, args.r8, [args.r10, args.r11, args.r12, args.r13]))
+    Ok((args.r8, [args.r10, args.r11, args.r12, args.r13]))
 }
 
 fn td_call(args: &mut TdcallArgs) -> Result<(), TdCallError> {
