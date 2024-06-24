@@ -645,7 +645,6 @@ pub fn write_servetd(
         r11: uuid[1],
         r12: uuid[2],
         r13: uuid[3],
-        ..Default::default()
     };
     td_call(&mut args)?;
     Ok((args.r8, [args.r10, args.r11, args.r12, args.r13]))
