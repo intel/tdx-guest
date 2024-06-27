@@ -96,7 +96,6 @@ pub fn handle_virtual_exception(trapframe: &mut dyn TdxTrapFrame, ve_info: &TdgV
     let mut instr_len = ve_info.exit_instruction_length;
     match ve_info.exit_reason.into() {
         TdxVirtualExceptionType::Hlt => {
-            serial_println!("Ready to halt");
             hlt();
         }
         TdxVirtualExceptionType::Io => {
