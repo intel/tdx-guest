@@ -275,6 +275,42 @@ pub(crate) fn handle_mmio(
                         Register::RCX | Register::ECX | Register::CX | Register::CL => {
                             trapframe.set_rcx(read_res)
                         }
+                        Register::RDX | Register::EDX | Register::DX | Register::DL => {
+                            trapframe.set_rdx(read_res)
+                        }
+                        Register::RBP | Register::EBP | Register::BP | Register::BPL => {
+                            trapframe.set_rbp(read_res)
+                        }
+                        Register::R8 | Register::R8D | Register::R8W | Register::R8L => {
+                            trapframe.set_r8(read_res)
+                        }
+                        Register::R9 | Register::R9D | Register::R9W | Register::R9L => {
+                            trapframe.set_r9(read_res)
+                        }
+                        Register::R10 | Register::R10D | Register::R10W | Register::R10L => {
+                            trapframe.set_r10(read_res)
+                        }
+                        Register::R11 | Register::R11D | Register::R11W | Register::R11L => {
+                            trapframe.set_r11(read_res)
+                        }
+                        Register::R12 | Register::R12D | Register::R12W | Register::R12L => {
+                            trapframe.set_r12(read_res)
+                        }
+                        Register::R13 | Register::R13D | Register::R13W | Register::R13L => {
+                            trapframe.set_r13(read_res)
+                        }
+                        Register::R14 | Register::R14D | Register::R14W | Register::R14L => {
+                            trapframe.set_r14(read_res)
+                        }
+                        Register::R15 | Register::R15D | Register::R15W | Register::R15L => {
+                            trapframe.set_r15(read_res)
+                        }
+                        Register::RSI | Register::ESI | Register::SI | Register::SIL => {
+                            trapframe.set_rsi(read_res)
+                        }
+                        Register::RDI | Register::EDI | Register::DI | Register::DIL => {
+                            trapframe.set_rdi(read_res)
+                        }
                         _ => return Err(MmioError::Unimplemented),
                     }
                 },
