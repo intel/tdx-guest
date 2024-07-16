@@ -85,6 +85,9 @@ pub(crate) fn handle_mmio(
                         Register::R13 => trapframe.r13() as u64,
                         Register::R14 => trapframe.r14() as u64,
                         Register::R15 => trapframe.r15() as u64,
+                        Register::RSI => trapframe.rsi() as u64,
+                        Register::RDI => trapframe.rdi() as u64,
+                        Register::RBP => trapframe.rbp() as u64,
                         Register::EAX => (trapframe.rax() & 0xFFFF_FFFF) as u64,
                         Register::EBX => (trapframe.rbx() & 0xFFFF_FFFF) as u64,
                         Register::ECX => (trapframe.rcx() & 0xFFFF_FFFF) as u64,
@@ -104,13 +107,32 @@ pub(crate) fn handle_mmio(
                         Register::BX => (trapframe.rbx() & 0xFFFF) as u64,
                         Register::CX => (trapframe.rcx() & 0xFFFF) as u64,
                         Register::DX => (trapframe.rdx() & 0xFFFF) as u64,
+                        Register::R8W => (trapframe.r8() & 0xFFFF) as u64,
+                        Register::R9W => (trapframe.r9() & 0xFFFF) as u64,
+                        Register::R10W => (trapframe.r10() & 0xFFFF) as u64,
+                        Register::R11W => (trapframe.r11() & 0xFFFF) as u64,
+                        Register::R12W => (trapframe.r12() & 0xFFFF) as u64,
+                        Register::R13W => (trapframe.r13() & 0xFFFF) as u64,
+                        Register::R14W => (trapframe.r14() & 0xFFFF) as u64,
+                        Register::R15W => (trapframe.r15() & 0xFFFF) as u64,
                         Register::SI => (trapframe.rsi() & 0xFFFF) as u64,
+                        Register::DI => (trapframe.rdi() & 0xFFFF) as u64,
+                        Register::BP => (trapframe.rbp() & 0xFFFF) as u64,
                         Register::AL => (trapframe.rax() & 0xFF) as u64,
                         Register::BL => (trapframe.rbx() & 0xFF) as u64,
                         Register::CL => (trapframe.rcx() & 0xFF) as u64,
                         Register::DL => (trapframe.rdx() & 0xFF) as u64,
+                        Register::R8L => (trapframe.r8() & 0xFF) as u64,
+                        Register::R9L => (trapframe.r9() & 0xFF) as u64,
+                        Register::R10L => (trapframe.r10() & 0xFF) as u64,
+                        Register::R11L => (trapframe.r11() & 0xFF) as u64,
+                        Register::R12L => (trapframe.r12() & 0xFF) as u64,
+                        Register::R13L => (trapframe.r13() & 0xFF) as u64,
+                        Register::R14L => (trapframe.r14() & 0xFF) as u64,
+                        Register::R15L => (trapframe.r15() & 0xFF) as u64,
                         Register::SIL => (trapframe.rsi() & 0xFF) as u64,
                         Register::DIL => (trapframe.rdi() & 0xFF) as u64,
+                        Register::BPL => (trapframe.rbp() & 0xFF) as u64,
                         _ => todo!(),
                     };
                     // Safety: The mmio_gpa obtained from `ve_info` is valid, and the value and size parsed from the instruction are valid.
@@ -141,6 +163,16 @@ pub(crate) fn handle_mmio(
                         Register::RBX => trapframe.set_rbx(read_res),
                         Register::RCX => trapframe.set_rcx(read_res),
                         Register::RDX => trapframe.set_rdx(read_res),
+                        Register::R8 => trapframe.set_r8(read_res),
+                        Register::R9 => trapframe.set_r9(read_res),
+                        Register::R10 => trapframe.set_r10(read_res),
+                        Register::R11 => trapframe.set_r11(read_res),
+                        Register::R12 => trapframe.set_r12(read_res),
+                        Register::R13 => trapframe.set_r13(read_res),
+                        Register::R14 => trapframe.set_r14(read_res),
+                        Register::R15 => trapframe.set_r15(read_res),
+                        Register::RSI => trapframe.set_rsi(read_res),
+                        Register::RDI => trapframe.set_rdi(read_res),
                         Register::RBP => trapframe.set_rbp(read_res),
                         Register::EAX => {
                             trapframe.set_rax((trapframe.rax() & 0xFFFF_FFFF_0000_0000) | read_res)
@@ -178,14 +210,14 @@ pub(crate) fn handle_mmio(
                         Register::R15D => {
                             trapframe.set_r15((trapframe.r15() & 0xFFFF_FFFF_0000_0000) | read_res)
                         }
-                        Register::EBP => {
-                            trapframe.set_rbp((trapframe.rbp() & 0xFFFF_FFFF_0000_0000) | read_res)
+                        Register::ESI => {
+                            trapframe.set_rsi((trapframe.rsi() & 0xFFFF_FFFF_0000_0000) | read_res)
                         }
                         Register::EDI => {
                             trapframe.set_rdi((trapframe.rdi() & 0xFFFF_FFFF_0000_0000) | read_res)
                         }
-                        Register::ESI => {
-                            trapframe.set_rsi((trapframe.rsi() & 0xFFFF_FFFF_0000_0000) | read_res)
+                        Register::EBP => {
+                            trapframe.set_rbp((trapframe.rbp() & 0xFFFF_FFFF_0000_0000) | read_res)
                         }
                         Register::AX => {
                             trapframe.set_rax((trapframe.rax() & 0xFFFF_FFFF_FFFF_0000) | read_res)
@@ -199,8 +231,14 @@ pub(crate) fn handle_mmio(
                         Register::DX => {
                             trapframe.set_rdx((trapframe.rdx() & 0xFFFF_FFFF_FFFF_0000) | read_res)
                         }
-                        Register::BP => {
-                            trapframe.set_rbp((trapframe.rbp() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        Register::R8W => {
+                            trapframe.set_r8((trapframe.r8() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::R9W => {
+                            trapframe.set_r9((trapframe.r9() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::R10W => {
+                            trapframe.set_r10((trapframe.r10() & 0xFFFF_FFFF_FFFF_0000) | read_res)
                         }
                         Register::R11W => {
                             trapframe.set_r11((trapframe.r11() & 0xFFFF_FFFF_FFFF_0000) | read_res)
@@ -210,6 +248,21 @@ pub(crate) fn handle_mmio(
                         }
                         Register::R13W => {
                             trapframe.set_r13((trapframe.r13() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::R14W => {
+                            trapframe.set_r14((trapframe.r14() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::R15W => {
+                            trapframe.set_r15((trapframe.r15() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::SI => {
+                            trapframe.set_rsi((trapframe.rsi() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::DI => {
+                            trapframe.set_rdi((trapframe.rdi() & 0xFFFF_FFFF_FFFF_0000) | read_res)
+                        }
+                        Register::BP => {
+                            trapframe.set_rbp((trapframe.rbp() & 0xFFFF_FFFF_FFFF_0000) | read_res)
                         }
                         Register::AL => {
                             trapframe.set_rax((trapframe.rax() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
@@ -222,12 +275,6 @@ pub(crate) fn handle_mmio(
                         }
                         Register::DL => {
                             trapframe.set_rdx((trapframe.rdx() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
-                        }
-                        Register::SIL => {
-                            trapframe.set_rsi((trapframe.rsi() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
-                        }
-                        Register::DIL => {
-                            trapframe.set_rdi((trapframe.rdi() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
                         }
                         Register::R8L => {
                             trapframe.set_r8((trapframe.r8() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
@@ -253,6 +300,12 @@ pub(crate) fn handle_mmio(
                         Register::R15L => {
                             trapframe.set_r15((trapframe.r15() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
                         }
+                        Register::SIL => {
+                            trapframe.set_rsi((trapframe.rsi() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
+                        }
+                        Register::DIL => {
+                            trapframe.set_rdi((trapframe.rdi() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
+                        }
                         Register::BPL => {
                             trapframe.set_rbp((trapframe.rbp() & 0xFFFF_FFFF_FFFF_FF00) | read_res)
                         }
@@ -277,9 +330,6 @@ pub(crate) fn handle_mmio(
                         }
                         Register::RDX | Register::EDX | Register::DX | Register::DL => {
                             trapframe.set_rdx(read_res)
-                        }
-                        Register::RBP | Register::EBP | Register::BP | Register::BPL => {
-                            trapframe.set_rbp(read_res)
                         }
                         Register::R8 | Register::R8D | Register::R8W | Register::R8L => {
                             trapframe.set_r8(read_res)
@@ -310,6 +360,9 @@ pub(crate) fn handle_mmio(
                         }
                         Register::RDI | Register::EDI | Register::DI | Register::DIL => {
                             trapframe.set_rdi(read_res)
+                        }
+                        Register::RBP | Register::EBP | Register::BP | Register::BPL => {
+                            trapframe.set_rbp(read_res)
                         }
                         _ => return Err(MmioError::Unimplemented),
                     }
