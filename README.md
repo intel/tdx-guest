@@ -1,3 +1,5 @@
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9205/badge)](https://www.bestpractices.dev/projects/9205)
+
 ## Introducing tdx-guest
 
 The tdx-guest provides a Rust implementation of Intel® Trust Domain Extensions (Intel® TDX) Guest APIs, supporting for TDX Guest specific instructions, structures and functions.
