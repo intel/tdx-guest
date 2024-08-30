@@ -27,6 +27,9 @@ pub enum TdcallNum {
     MrVerifyreport = 22,
     MemPageAttrRd = 23,
     MemPageAttrWr = 24,
+    VpEnter = 25,
+    VpInvept = 26,
+    VpInvgla = 27,
 }
 
 bitflags! {
@@ -277,6 +280,90 @@ pub struct TdgVpInfo {
     /// Indicates that the TDG.SYS.RD/RDM/RDCALL function are avaliable.
     pub sys_rd: u32,
 }
+
+/// L2EnterGuestState is used as input and output of enter_l2_vcpu. It is an array of general-purpose (GPR) register
+/// values, organized according to their architectural number, with additional values of RFLAG, RIP and SSP.
+pub struct L2EnterGuestState {
+    pub rax: u64,
+    pub rcx: u64,
+    pub rdx: u64,
+    pub rbx: u64,
+    pub rsp: u64,
+    pub rbp: u64,
+    pub rsi: u64,
+    pub rdi: u64,
+    pub r8: u64,
+    pub r9: u64,
+    pub r10: u64,
+    pub r11: u64,
+    pub r12: u64,
+    pub r13: u64,
+    pub r14: u64,
+    pub r15: u64,
+    pub rflags: u64,
+    pub rip: u64,
+    pub ssp: u64,
+    // Bit 0:7: RVI, Bit 8-15: SVI
+    pub guest_interrupt_status: u16,
+}
+
+/// Controls how enter_l2_vcpu flushes the TLB context and extended paging structure (EPxE) caches
+/// associated with the L2 VM before entering the L2 VCPU.
+#[derive(Clone)]
+pub enum InvdTranslations {
+    NoInvalidation,
+    /// Invalidate all TLB entries and extended paging-structure translations (EPxE) associated with the L2 VM being entered.
+    InvdTlbAndEpxe,
+    /// Invalidate all TLB entries associated with the L2 VM being entered.
+    InvdTlb,
+    /// Invalidate TLB entries associated with the L2 VM being entered, excluding global translations.
+    InvdTlbExpGlobalTranslations,
+}
+
+impl From<u64> for InvdTranslations {
+    fn from(val: u64) -> Self {
+        match val {
+            0 => Self::NoInvalidation,
+            1 => Self::InvdTlbAndEpxe,
+            2 => Self::InvdTlb,
+            3 => Self::InvdTlbExpGlobalTranslations,
+            _ => panic!("Invalid value"),
+        }
+    }
+}
+
+enum Gla {
+    ListEntry(GlaListEntry),
+    ListInfo(GlaListInfo),
+}
+
+impl Gla {
+    fn value(&self) -> u64 {
+        match *self {
+            Gla::ListEntry(GlaListEntry(value)) => value,
+            Gla::ListInfo(GlaListInfo(value)) => value,
+        }
+    }
+}
+
+/// The `GlaListEntry` species a range of consecutive guest linear addresses, each aligned on 4KB.
+///
+/// The `GlaListEntry` consists of the following fields:
+/// - **Bit 0-11**  LAST_GLA_INDEX: Index of the last 4KB-aligned linear address to be processed.
+/// - **Bit 12-63** BASE_GLA: Bits 63:12 of the guest linear address of the first 4KB page to be processed.
+pub struct GlaListEntry(u64);
+
+/// The `GlaListInfo` is used as a GPR input and output operand of TDG.VP.INVGLA.
+/// It provides the GPA of the GLA list page in private memory,
+/// the index of the first entry and the number of entries to be processed.
+///
+/// The `GlaListInfo` consists of the following fields:
+/// - **Bit 0-8**    FIRST_ENTRY: Index of the first entry of the list to be processed.
+/// - **Bit 9-11**   RESERVED: Reserved: must be 0.
+/// - **Bit 12-51**  LIST_GPA: Bits 51:12 of the guest physical address of the GLA list page, which must be a private GPA.
+/// - **Bit 52-61**  NUM_ENTRIES: Number of entries in the GLA list to be processed, must be between 0 through 512.
+/// - **Bit 62-63**  RESERVED: Reserved: must be 0.
+pub struct GlaListInfo(u64);
 
 #[derive(Debug, PartialEq)]
 pub enum TdCallError {
@@ -569,6 +656,100 @@ pub fn set_cpuidve(cpuidve_flag: u64) -> Result<(), TdCallError> {
         ..Default::default()
     };
     td_call(&mut args)
+}
+
+/// Enter L2 VCPU operation.
+///
+/// Inputs:
+/// - l2_vm_idx: L2 virtual machine index (must be 1 or higher).
+/// - invd_translations: Controls how enter_l2_vcpu flushes the TLB context and extended paging structure (EPxE) caches
+///   associated with the L2 VM before entering the L2 VCPU.
+/// - guest_state_gpa: The GPA of a 256-bytes aligned L2EnterGuestState structure.
+///
+/// Outputs:
+/// - Return registers status in L2EnterGuestState.
+pub fn enter_l2_vcpu(
+    l2_vm_idx: u64,
+    invd_translations: InvdTranslations,
+    guest_state_gpa: u64,
+) -> Result<(), TdCallError> {
+    if (l2_vm_idx > 3) | (invd_translations.clone() as u64 > 3) {
+        return Err(TdCallError::TdxOperandInvalid);
+    }
+
+    let rcx = (l2_vm_idx << 52) | (invd_translations as u64);
+    let mut args = TdcallArgs {
+        rax: TdcallNum::VpEnter as u64,
+        rcx: l2_vm_idx,
+        rdx: guest_state_gpa,
+        ..Default::default()
+    };
+    td_call(&mut args)
+}
+
+/// Invalidate cached EPT translations for selected L2 VMs.
+///
+/// Inputs:
+/// - l2_vm_idx_bitmap: the index of the L2 VM to invalidate.
+///     Bit 1: Invalidate EPT for L2 VM #1.
+///     Bit 2: Invalidate EPT for L2 VM #2.
+///     Bit 3: Invalidate EPT for L2 VM #3.
+pub fn invalidate_l2_cached_ept(l2_vm_idx_bitmap: u64) -> Result<(), TdCallError> {
+    if l2_vm_idx_bitmap & !0b1110 == 0 {
+        return Err(TdCallError::TdxOperandInvalid);
+    }
+    let mut args = TdcallArgs {
+        rax: TdcallNum::VpInvept as u64,
+        rcx: l2_vm_idx_bitmap,
+        ..Default::default()
+    };
+    td_call(&mut args)
+}
+
+/// Invalidate Guest Linear Address (GLA) mappings in the translation lookaside buffers (TLBs) and paging-structure caches
+/// for a specified L2 VM and a specified list of 4KB-aligned linear addresses.
+///
+/// Inputs:
+/// - l2_vm_idx: the index of the L2 VM to invalidate.
+///     1: Invalidate EPT for L2 VM #1.
+///     2: Invalidate EPT for L2 VM #2.
+///     3: Invalidate EPT for L2 VM #3.
+/// - list: GlaListEntry or GlaListInfo Flags.
+///     0: gla contains a single GLA list entry.
+///     1: RDX contains the GPA and other information of a GLA list in memory.
+/// - gla: Depending on the list flag, it contains either of the following:
+///     - A single GlaListEntry, specifying up to 512 consecutive guest linear addresses, each aligned on 4KB.
+///     - GlaLstInfo, specifying the GPA of a guest linear address (GLA) list in private
+///       memory. Each entry in the GLA list specifies up to 512 consecutive guest linear
+///       addresses, each aligned on 4KB. GlaLstInfo also specifies the first and last GLA
+///       list entries to process.
+///
+/// Outputs:
+/// - RDX: Depending on the list flag, it contains either of the following:
+///     - If list was 0, RDX contains the single GlaListEntry provided as an input, unmodified.
+///     - If list was 1, RDX contains the GlaLstInfo provided as input,
+///       but with the FIRST_ENTRY and NUM_ENTRIES fields updated to reflect the number of entries processed so far.
+///       If all entries have been processed successfully, NUM_ENTRIES is set to 0.
+pub fn invalidate_l2_gla(l2_vm_idx: u64, list: bool, gla: u64) -> Result<u64, TdCallError> {
+    if l2_vm_idx > 3 {
+        return Err(TdCallError::TdxOperandInvalid);
+    }
+
+    let rcx = (l2_vm_idx << 52) | if list { 0b1 } else { 0 };
+    let rdx = if list {
+        Gla::ListEntry(GlaListEntry(gla))
+    } else {
+        Gla::ListInfo(GlaListInfo(gla))
+    }
+    .value();
+
+    let mut args = TdcallArgs {
+        rax: TdcallNum::VpInvgla as u64,
+        rcx,
+        rdx,
+        ..Default::default()
+    };
+    td_call(&mut args).map(|_| args.rdx)
 }
 
 /// As a service TD, read a metadata field (control structure field) of a target TD.

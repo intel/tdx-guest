@@ -26,9 +26,9 @@ The tdx-guest provides a Rust implementation of Intel® Trust Domain Extension
 | 22   | TDG.MR.VERIFYREPORT | Verify a cryptographic report of a TD, generated on the current platform | ✅ | `verify_report` | 1.5 |
 | 23   | TDG.MEM.PAGE.ATTR.RD | Read the GPA mapping and attributes of a TD private page | ✅ | `read_page_attr` | 1.5 |
 | 24   | TDG.MEM.PAGE.ATTR.WR | Write the attributes of a private page | ✅ | `write_page_attr` | 1.5 |
-| 25   | TDG.VP.ENTER | Enter L2 VCPU operation | ❌ | - | 1.5 |
-| 26   | TDG.VP.INVEPT | Invalidate cached EPT translations for selected L2 VMs | ❌ | - | 1.5 |
-| 27   | TDG.VP.INVVPID | Invalidate cached translations for selected pages in an L2 VM | ❌ | - | 1.5 |
+| 25   | TDG.VP.ENTER | Enter L2 VCPU operation | ✅ | - | 1.5 |
+| 26   | TDG.VP.INVEPT | Invalidate cached EPT translations for selected L2 VMs | ✅ | - | 1.5 |
+| 27   | TDG.VP.INVVPID | Invalidate cached translations for selected pages in an L2 VM | ✅ | - | 1.5 |
 
 ## TDVMCALL Implementation
 
