@@ -419,15 +419,14 @@ pub fn get_tdinfo() -> Result<TdgVpInfo, TdCallError> {
         ..Default::default()
     };
     td_call(&mut args)?;
-    let td_info = TdgVpInfo {
+    Ok(TdgVpInfo {
         gpaw: Gpaw::from(args.rcx),
         attributes: GuestTdAttributes::from_bits_truncate(args.rdx),
         num_vcpus: args.r8 as u32,
         max_vcpus: (args.r8 >> 32) as u32,
         vcpu_index: args.r9 as u32,
         sys_rd: args.r10 as u32,
-    };
-    Ok(td_info)
+    })
 }
 
 /// Get Virtualization Exception Information for the recent #VE exception.
@@ -437,15 +436,14 @@ pub fn get_veinfo() -> Result<TdgVeInfo, TdCallError> {
         ..Default::default()
     };
     td_call(&mut args)?;
-    let ve_info = TdgVeInfo {
+    Ok(TdgVeInfo {
         exit_reason: args.rcx as u32,
         exit_qualification: args.rdx,
         guest_linear_address: args.r8,
         guest_physical_address: args.r9,
         exit_instruction_length: args.r10 as u32,
         exit_instruction_info: (args.r10 >> 32) as u32,
-    };
-    Ok(ve_info)
+    })
 }
 
 /// Extend a TDCS.RTMR measurement register.
@@ -503,11 +501,10 @@ pub fn read_page_attr(gpa: &[u8]) -> Result<PageAttr, TdCallError> {
         ..Default::default()
     };
     td_call(&mut args)?;
-    let page_attr = PageAttr {
+    Ok(PageAttr {
         gpa_mapping: args.rcx,
         gpa_attr: GpaAttrAll::from(args.rdx),
-    };
-    Ok(page_attr)
+    })
 }
 
 /// Write the attributes of a private page. Create or remove L2 page aliases as required.
@@ -520,11 +517,10 @@ pub fn write_page_attr(page_attr: PageAttr, attr_flags: u64) -> Result<PageAttr,
         ..Default::default()
     };
     td_call(&mut args)?;
-    let page_attr = PageAttr {
+    Ok(PageAttr {
         gpa_mapping: args.rcx,
         gpa_attr: GpaAttrAll::from(args.rdx),
-    };
-    Ok(page_attr)
+    })
 }
 
 /// Read a TD-scope metadata field (control structure field) of a TD.
@@ -534,8 +530,7 @@ pub fn read_td_metadata(field_identifier: u64) -> Result<u64, TdCallError> {
         rdx: field_identifier,
         ..Default::default()
     };
-    td_call(&mut args)?;
-    Ok(args.r8)
+    td_call(&mut args).map(|_| args.r8)
 }
 
 /// Write a TD-scope metadata field (control structure field) of a TD.
@@ -608,8 +603,7 @@ pub fn read_servetd(
         r13: uuid[3],
         ..Default::default()
     };
-    td_call(&mut args)?;
-    Ok((args.rdx, args.r8, [args.r10, args.r11, args.r12, args.r13]))
+    td_call(&mut args).map(|_| (args.rdx, args.r8, [args.r10, args.r11, args.r12, args.r13]))
 }
 
 /// As a service TD, write a metadata field (control structure field) of a target TD.
@@ -646,8 +640,7 @@ pub fn write_servetd(
         r12: uuid[2],
         r13: uuid[3],
     };
-    td_call(&mut args)?;
-    Ok((args.r8, [args.r10, args.r11, args.r12, args.r13]))
+    td_call(&mut args).map(|_| (args.r8, [args.r10, args.r11, args.r12, args.r13]))
 }
 
 fn td_call(args: &mut TdcallArgs) -> Result<(), TdCallError> {
