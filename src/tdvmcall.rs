@@ -3,6 +3,7 @@
 
 //! The TDVMCALL helps invoke services from the host VMM. From the perspective of the host VMM, the TDVMCALL is a trap-like, VM exit into
 //! the host VMM, reported via the SEAMRET instruction flow.
+//!
 //! By design, after the SEAMRET, the host VMM services the request specified in the parameters
 //! passed by the TD during the TDG.VP.VMCALL (that are passed via SEAMRET to the VMM), then
 //! resumes the TD via a SEAMCALL [TDH.VP.ENTER] invocation.
@@ -207,9 +208,11 @@ pub fn map_gpa(gpa: u64, size: u64) -> Result<(), (u64, TdVmcallError)> {
 }
 
 /// GetQuote TDG.VP.VMCALL is a doorbell-like interface used to help send a message to the
-/// host VMM to queue operations that tend to be long-running operations. GetQuote is
-/// designed to invoke a request to generate a TD-Quote signing by a service hosting TD-Quoting
+/// host VMM to queue operations that tend to be long-running operations.
+///
+/// GetQuote is designed to invoke a request to generate a TD-Quote signing by a service hosting TD-Quoting
 /// Enclave operating in the host environment for a TD Report passed as a parameter by the TD.
+///
 /// TDREPORT_STRUCT is a memory operand intended to be sent via the GetQuote
 /// TDG.VP.VMCALL to indicate the asynchronous service requested.
 pub fn get_quote(shared_gpa: u64, size: u64) -> Result<(), TdVmcallError> {
@@ -222,11 +225,13 @@ pub fn get_quote(shared_gpa: u64, size: u64) -> Result<(), TdVmcallError> {
     td_vmcall(&mut args)
 }
 
-/// The guest TD may request that the host VMM specify which interrupt vector to use as an
-/// event-notify vector. This is designed as an untrusted operation; thus, the TD OS should be
-/// designed not to use the event notification for trusted operations. Example of an operation
-/// that can use the event notify is the host VMM signaling a device removal to the TD, in
+/// The guest TD may request that the host VMM specify which interrupt vector to use as an event-notify vector.
+///
+/// This is designed as an untrusted operation; thus, the TD OS should be designed not to use the event notification for trusted operations.
+///
+/// Example of an operation that can use the event notify is the host VMM signaling a device removal to the TD, in
 /// response to which a TD may unload a device driver.
+///
 /// The host VMM should use SEAMCALL [TDWRVPS] leaf to inject an interrupt at the requestedinterrupt vector into the TD VCPU that executed TDG.VP.VMCALL
 /// <SetupEventNotifyInterrupt> via the posted-interrupt descriptor.
 pub fn setup_event_notify_interrupt(interrupt_vector: u64) -> Result<(), TdVmcallError> {
@@ -263,14 +268,14 @@ pub fn get_tdvmcall_info(interrupt_vector: u64) -> Result<(), TdVmcallError> {
 ///
 /// Inputs:
 /// - shared_gpa_input: Shared 4KB aligned GPA as input – the memory contains a Command.
-/// It could be more than one 4K pages.
+///   It could be more than one 4K pages.
 /// - shared_gpa_output: Shared 4KB aligned GPA as output – the memory contains a Response.
-/// It could be more than one 4K pages.
+///   It could be more than one 4K pages.
 /// - interrupt_vector: Event notification interrupt vector - (valid values 32~255) selected by TD.
-/// 0: blocking action. VMM need get response then return.
-/// 1~31: Reserved. Should not be used.
-/// 32~255: Non-block action. VMM can return immediately and signal the interrupt vector when the response is ready.
-/// VMM should inject interrupt vector into the TD VCPU that executed TDG.VP.VMCALL<Service>.
+///   0: blocking action. VMM need get response then return.
+///   1~31: Reserved. Should not be used.
+///   32~255: Non-block action. VMM can return immediately and signal the interrupt vector when the response is ready.
+///   VMM should inject interrupt vector into the TD VCPU that executed TDG.VP.VMCALL<Service>.
 /// - time_out: Timeout– Maximum wait time for the command and response. 0 means infinite wait.
 pub fn get_td_service(
     shared_gpa_input: u64,

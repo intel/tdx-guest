@@ -2,6 +2,7 @@
 // Copyright(c) 2023-2024 Intel Corporation.
 
 //! The TDCALL instruction causes a VM exit to the Intel TDX module.
+//!
 //! It is used to call guest-side Intel TDX functions. For more information about
 //! TDCALL, please refer to the [Intel® TDX Module v1.5 ABI Specification](https://cdrdv2.intel.com/v1/dl/getContent/733579)
 
@@ -178,6 +179,7 @@ pub struct ReportType {
 }
 
 /// TDINFO_STRUCT is defined as the TDX-specific TEE_INFO part of TDG.MR.REPORT.
+///
 /// It contains the measurements and initial configuration of the TD that was
 /// locked at initialization and a set of measurement registers that are run-time
 /// extendable. These values are copied from the TDCS by the TDG.MR.REPORT function.
@@ -281,8 +283,9 @@ pub struct TdgVpInfo {
     pub sys_rd: u32,
 }
 
-/// L2EnterGuestState is used as input and output of enter_l2_vcpu. It is an array of general-purpose (GPR) register
-/// values, organized according to their architectural number, with additional values of RFLAG, RIP and SSP.
+/// L2EnterGuestState is used as input and output of enter_l2_vcpu.
+///
+/// It is an array of general-purpose (GPR) register values, organized according to their architectural number, with additional values of RFLAG, RIP and SSP.
 pub struct L2EnterGuestState {
     pub rax: u64,
     pub rcx: u64,
@@ -354,6 +357,7 @@ impl Gla {
 pub struct GlaListEntry(u64);
 
 /// The `GlaListInfo` is used as a GPR input and output operand of TDG.VP.INVGLA.
+///
 /// It provides the GPA of the GLA list page in private memory,
 /// the index of the first entry and the number of entries to be processed.
 ///
@@ -622,10 +626,10 @@ pub fn read_td_metadata(field_identifier: u64) -> Result<u64, TdCallError> {
 
 /// Write a TD-scope metadata field (control structure field) of a TD.
 ///
-/// - data: data to write to the field
+/// - data: data to write to the field.
 ///
 /// - write_mask: a 64b write mask to indicate which bits of the value
-/// in R8 are to be written to the field.
+///   in R8 are to be written to the field.
 ///
 /// It returns previous contents of the field.
 pub fn write_td_metadata(
@@ -757,16 +761,15 @@ pub fn invalidate_l2_gla(l2_vm_idx: u64, list: bool, gla: u64) -> Result<u64, Td
 /// Inputs:
 /// - binding_handle: the binding handle of the target TD.
 /// - field_identifier: the identifier of the field to read.
-/// The `LAST_ELEMENT_IN_FIELD` and `LAST_FIELD_IN_SEQUENCE` components of the field identifier must be 0.
-/// `WRITE_MASK_VALID`, `INC_SIZE`, `CONTEXT_CODE` and `ELEMENT_SIZE_CODE` components of the field identifier are ignored.
-/// A value of -1 is a special case: it is not a valid field identifier;
-/// in this case the first readable field identifier is returned in `RDX`.
+///   The `LAST_ELEMENT_IN_FIELD` and `LAST_FIELD_IN_SEQUENCE` components of the field identifier must be 0.
+///   `WRITE_MASK_VALID`, `INC_SIZE`, `CONTEXT_CODE` and `ELEMENT_SIZE_CODE` components of the field identifier are ignored.
+///   A value of -1 is a special case: it is not a valid field identifier; in this case the first readable field identifier is returned in `RDX`.
 /// - uuid: the TD_UUID of the target TD, using little-Endian.
 ///
 /// Outputs:
 /// - Next readable field identifier. A value of -1 indicates no next field identifier is available.
-/// If the input field identifier was -1, `RDX` returns the first readable field identifier.
-/// In case of another error, `RDX` returns -1.
+///   If the input field identifier was -1, `RDX` returns the first readable field identifier.
+///   In case of another error, `RDX` returns -1.
 /// - Contents of the field. In case of an error, as indicated by `RAX`, `R8` returns 0.
 /// - Updated target TD’s TD_UUID, using little-Endian.
 pub fn read_servetd(
@@ -792,10 +795,9 @@ pub fn read_servetd(
 /// Inputs:
 /// - binding_handle: the binding handle of the target TD.
 /// - field_identifier: the identifier of the field to read.
-/// The `LAST_ELEMENT_IN_FIELD` and `LAST_FIELD_IN_SEQUENCE` components of the field identifier must be 0.
-/// `WRITE_MASK_VALID`, `INC_SIZE`, `CONTEXT_CODE` and `ELEMENT_SIZE_CODE` components of the field identifier are ignored.
-/// A value of -1 is a special case: it is not a valid field identifier;
-/// in this case the first readable field identifier is returned in `RDX`.
+///   The `LAST_ELEMENT_IN_FIELD` and `LAST_FIELD_IN_SEQUENCE` components of the field identifier must be 0.
+///   `WRITE_MASK_VALID`, `INC_SIZE`, `CONTEXT_CODE` and `ELEMENT_SIZE_CODE` components of the field identifier are ignored.
+///   A value of -1 is a special case: it is not a valid field identifier; in this case the first readable field identifier is returned in `RDX`.
 /// - data: Data to write to the field.
 /// - write_mask: A 64b write mask to indicate which bits of the value in `R8` are to be written to the field.
 /// - uuid: the TD_UUID of the target TD, using little-Endian.
