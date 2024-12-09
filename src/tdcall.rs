@@ -830,6 +830,6 @@ fn td_call(args: &mut TdcallArgs) -> Result<(), TdCallError> {
     let result = unsafe { asm_td_call(args) };
     match result {
         0 => Ok(()),
-        _ => Err(result.into()),
+        _ => Err((result >> 32).into()),
     }
 }
