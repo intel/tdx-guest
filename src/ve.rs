@@ -174,51 +174,21 @@ pub(crate) fn handle_mmio(
                         Register::RSI => trapframe.set_rsi(read_res),
                         Register::RDI => trapframe.set_rdi(read_res),
                         Register::RBP => trapframe.set_rbp(read_res),
-                        Register::EAX => {
-                            trapframe.set_rax((trapframe.rax() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::EBX => {
-                            trapframe.set_rbx((trapframe.rbx() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::ECX => {
-                            trapframe.set_rcx((trapframe.rcx() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::EDX => {
-                            trapframe.set_rdx((trapframe.rdx() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R8D => {
-                            trapframe.set_r8((trapframe.r8() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R9D => {
-                            trapframe.set_r9((trapframe.r9() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R10D => {
-                            trapframe.set_r10((trapframe.r10() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R11D => {
-                            trapframe.set_r11((trapframe.r11() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R12D => {
-                            trapframe.set_r12((trapframe.r12() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R13D => {
-                            trapframe.set_r13((trapframe.r13() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R14D => {
-                            trapframe.set_r14((trapframe.r14() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::R15D => {
-                            trapframe.set_r15((trapframe.r15() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::ESI => {
-                            trapframe.set_rsi((trapframe.rsi() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::EDI => {
-                            trapframe.set_rdi((trapframe.rdi() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
-                        Register::EBP => {
-                            trapframe.set_rbp((trapframe.rbp() & 0xFFFF_FFFF_0000_0000) | read_res)
-                        }
+                        Register::EAX => trapframe.set_rax(read_res),
+                        Register::EBX => trapframe.set_rbx(read_res),
+                        Register::ECX => trapframe.set_rcx(read_res),
+                        Register::EDX => trapframe.set_rdx(read_res),
+                        Register::R8D => trapframe.set_r8(read_res),
+                        Register::R9D => trapframe.set_r9(read_res),
+                        Register::R10D => trapframe.set_r10(read_res),
+                        Register::R11D => trapframe.set_r11(read_res),
+                        Register::R12D => trapframe.set_r12(read_res),
+                        Register::R13D => trapframe.set_r13(read_res),
+                        Register::R14D => trapframe.set_r14(read_res),
+                        Register::R15D => trapframe.set_r15(read_res),
+                        Register::ESI => trapframe.set_rsi(read_res),
+                        Register::EDI => trapframe.set_rdi(read_res),
+                        Register::EBP => trapframe.set_rbp(read_res),
                         Register::AX => {
                             trapframe.set_rax((trapframe.rax() & 0xFFFF_FFFF_FFFF_0000) | read_res)
                         }
