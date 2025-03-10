@@ -12,11 +12,7 @@ extern crate alloc;
 use alloc::fmt;
 use core::fmt::Write;
 
-use bitflags::bitflags;
-use x86_64::{
-    registers::rflags::{self, RFlags},
-    structures::port::PortRead,
-};
+use x86_64::registers::rflags::{self, RFlags};
 
 use crate::asm::asm_td_vmcall;
 
@@ -348,44 +344,12 @@ fn td_vmcall(args: &mut TdVmcallArgs) -> Result<(), TdVmcallError> {
     }
 }
 
-bitflags! {
-    /// LineSts: Line Status
-    struct LineSts: u8 {
-        const INPUT_FULL = 1;
-        const OUTPUT_EMPTY = 1 << 5;
-    }
-}
-
-fn read_line_sts() -> LineSts {
-    LineSts::from_bits_truncate(unsafe { PortRead::read_from_port(SERIAL_LINE_STS) })
-}
-
 struct Serial;
-
-impl Serial {
-    fn serial_write_byte(byte: u8) {
-        match byte {
-            // Backspace/Delete
-            8 | 0x7F => {
-                while !read_line_sts().contains(LineSts::OUTPUT_EMPTY) {}
-                io_write!(SERIAL_IO_PORT, 8, u8).unwrap();
-                while !read_line_sts().contains(LineSts::OUTPUT_EMPTY) {}
-                io_write!(SERIAL_IO_PORT, b' ', u8).unwrap();
-                while !read_line_sts().contains(LineSts::OUTPUT_EMPTY) {}
-                io_write!(SERIAL_IO_PORT, 8, u8).unwrap();
-            }
-            _ => {
-                while !read_line_sts().contains(LineSts::OUTPUT_EMPTY) {}
-                io_write!(SERIAL_IO_PORT, byte, u8).unwrap();
-            }
-        }
-    }
-}
 
 impl Write for Serial {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        for &c in s.as_bytes() {
-            Serial::serial_write_byte(c);
+        for &byte in s.as_bytes() {
+            io_write!(SERIAL_IO_PORT, byte, u8).unwrap();
         }
         Ok(())
     }
