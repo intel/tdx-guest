@@ -72,8 +72,9 @@ pub fn tdx_is_enabled() -> bool {
 
 pub fn init_tdx() -> Result<TdgVpInfo, InitError> {
     check_tdx_guest()?;
+    let info = tdcall::get_tdinfo()?;
     TDX_ENABLED.store(true, Relaxed);
-    Ok(tdcall::get_tdinfo()?)
+    Ok(info)
 }
 
 fn check_tdx_guest() -> Result<(), InitError> {
