@@ -3,7 +3,7 @@
 
 .section .text
 
-# Arguments offsets in TdVmcallArgs struct
+# Arguments offsets in TdcallArgs struct
 .equ TDCALL_RAX, 0x0
 .equ TDCALL_RCX, 0x8
 .equ TDCALL_RDX, 0x10
